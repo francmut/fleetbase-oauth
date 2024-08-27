@@ -5,6 +5,7 @@ use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -27,9 +28,22 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->group(
                     return Socialite::driver('google')->redirect();
                 });
 
-                $router->get('/auth/facebook/callback', function() {
+                $router->get('/auth/facebook/callback', function(Request $request) {
+
+                    $error = $request->query('error');
+                    if ($error) {
+                        $error_url = trim(config('services.fleetbase.app_redirect')) . '/error/' . $error;
+                        return redirect($error_url);
+                    }
 
                     $facebookUser = Socialite::driver('facebook')->stateless()->user();
+
+                    if (!$facebookUser ||  
+                        !array_key_exists('email', $facebookUser->user) ||  
+                        !array_key_exists('name', $facebookUser->user)) {
+                            $error_url = trim(config('services.fleetbase.app_redirect')) . '/error/' . $error;
+                            return redirect($error_url);
+                    }
 
                     $key = config('services.fleetbase.storefront_key');
 
@@ -82,9 +96,22 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->group(
 
                 });
 
-                $router->get('/auth/google/callback', function() {
+                $router->get('/auth/google/callback', function(Request $request) {
+
+                    $error = $request->query('error');
+                    if ($error) {
+                        $error_url = trim(config('services.fleetbase.app_redirect')) . '/error/' . $error;
+                        return redirect($error_url);
+                    }
 
                     $googleUser = Socialite::driver('google')->stateless()->user();
+
+                    if (!$googleUser ||  
+                        !array_key_exists('email', $googleUser->user) ||  
+                        !array_key_exists('name', $googleUser->user)) {
+                            $error_url = trim(config('services.fleetbase.app_redirect')) . '/error/' . $error;
+                            return redirect($error_url);
+                    }
 
                     $key = config('services.fleetbase.storefront_key');
 
